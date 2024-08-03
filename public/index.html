@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-time Chat Application</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+    />
+  </head>
+  <body>
+    <div id="login">
+      <div id="login-form">
+        <h1>Login</h1>
+        <input type="text" id="username" placeholder="Enter your username" />
+        <button id="login-btn">Start Chatting</button>
+      </div>
+    </div>
+    <div id="container">
+      <div id="sidebar">
+        <div id="sidebar-header">Users</div>
+        <ul id="contacts"></ul>
+      </div>
+      <div id="chat">
+        <div id="header">Chat with Everyone</div>
+        <ul id="messages"></ul>
+        <div id="message-input">
+          <input type="file" id="upload" />
+          <input type="text" id="message" placeholder="Type a message..." />
+          <button id="send">Send</button>
+        </div>
+      </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      let username;
+      let currentRecipient = null;
+
+      const loginSection = document.getElementById("login");
+      const loginButton = document.getElementById("login-btn");
+      const usernameInput = document.getElementById("username");
+      const container = document.getElementById("container");
+      const contactsList = document.getElementById("contacts");
+      const messages = document.getElementById("messages");
+      const messageInput = document.getElementById("message");
+      const sendButton = document.getElementById("send");
+      const fileInput = document.getElementById("upload");
+      const header = document.getElementById("header");
+
+      loginButton.addEventListener("click", () => {
+        username = usernameInput.value;
+        if (username) {
+          socket.emit("setUsername", username);
+          loginSection.style.display = "none";
+          container.style.display = "flex";
+        }
+      });
+
+      socket.on("userList", (users) => {
+        contactsList.innerHTML = "";
+        users.forEach((user) => {
+          if (user !== username) {
+            const li = document.createElement("li");
+            li.textContent = user;
+            li.addEventListener("click", () => {
+              currentRecipient = user;
+              header.textContent = `Chat with ${currentRecipient}`;
+            });
+            contactsList.appendChild(li);
+          }
+        });
+      });
+
+      socket.on("receiveMessage", (message) => {
+        displayMessage(message);
+      });
+
+      function displayMessage(message) {
+        const li = document.createElement("li");
+        li.className = `message ${
+          message.sender === username ? "user" : "other"
+        }`;
+        li.textContent = message.text;
+        if (message.image) {
+          const img = document.createElement("img");
+          img.src = message.image;
+          li.appendChild(img);
+        }
+        messages.appendChild(li);
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      sendButton.addEventListener("click", () => {
+        const message = messageInput.value;
+        if (message) {
+          const messageData = { text: message };
+          if (currentRecipient) {
+            messageData.to = currentRecipient;
+          }
+          socket.emit("sendMessage", messageData);
+          displayMessage({ text: message, sender: username }); // Show message on sender's side
+          messageInput.value = "";
+        }
+      });
+
+      fileInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const messageData = { image: reader.result };
+            if (currentRecipient) {
+              messageData.to = currentRecipient;
+            }
+            socket.emit("sendMessage", messageData);
+            displayMessage({ image: reader.result, sender: username }); // Show image on sender's side
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    </script>
+  </body>
+</html>
