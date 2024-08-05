@@ -1,6 +1,6 @@
-# WhisperHub
+# Whisperzzz
 
-WhisperHub is a real-time chat application built using Node.js, Socket.io, and Express. The application features a modern dark-themed UI inspired by GitHub's Nebula theme. It supports private messaging, group chats, and user presence indicators.
+Whisperzzz is a real-time chat application built using Node.js, Socket.io, and Express. The application features a modern dark-themed UI inspired by GitHub's Nebula theme. It supports private messaging, group chats, and user presence indicators.
 
 ## Features
 
